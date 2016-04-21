@@ -2,33 +2,6 @@ Safe Java-JS WebView Bridge
 ===================
 抛弃使用高风险的WebView addJavascriptInterface方法，通过对js层调用函数及回调函数的包装，支持异步回调，方法参数支持js所有已知的类型，包括number、string、boolean、object、function。
 
-## 安装
-使用Safe Java-JS WebView Bridge最简单的办法就是像下面这样添加项目依赖。
-
-**Maven**
-
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>2.3</version>
-    </dependency>
-    <dependency>
-      <groupId>cn.pedant.safewebviewbridge</groupId>
-      <artifactId>library</artifactId>
-      <version>1.4</version>
-      <type>aar</type>
-    </dependency>
-
-**Gradle**
-
-    repositories {
-        mavenCentral()
-    }
-
-    dependencies {
-        compile 'cn.pedant.safewebviewbridge:library:1.4'
-    }
-
 ## Sample
 [Sample 下载](https://github.com/pedant/safe-java-js-webview-bridge/releases/download/v1.1/safe-webview-bridge-sample-v1.1.apk)
 
@@ -109,7 +82,7 @@ Safe Java-JS WebView Bridge
 上面这三个方法并没有发生重载，HostApp.overloadMethod(1)调用时只会调用最后一个定义的方法（double类型定义的那个）。
 
 ### 方法的返回值
-Java层方法可以返回void 或 能转为字符串的类型（如int、long、String、double、float等）或 **可序列化的自定义类型**。关于自定义类型的返回可以参见Demo下“从Java层返回Java对象”项对HostApp.retJavaObject()的调用。另外如果方法定义时返回void，那么网页端调用得到的返回值为null。
+Java层方法可以返回void 或 能转为字符串的类型（如int、long、String、double、float等）或 **可序列化的自定义类型(JSONObject、JSONArray)**。另外如果方法定义时返回void，那么网页端调用得到的返回值为null。
 
 如果方法执行过程中出现异常，那么在网页JS端会抛出异常，可以catch后打印详细的错误说明。
 
@@ -150,18 +123,7 @@ JS中使用过大数字时，可能会导致精度丢失或者错误的数字结
 更多实现细节见: http://www.pedant.cn/2014/07/04/webview-js-java-interface-research/
 
 ### 发布时防混淆
-发布时需在你的混淆配置加入像下面这样的代码，注意返回到页面的自定义Java类以及注入类都要**换成你项目中实际使用类名**:
-
-    #--------------- BEGIN: Gson防混淆 ----------
-    -keepattributes *Annotation*
-    -keep class sun.misc.Unsafe { *; }
-    -keep class com.idea.fifaalarmclock.entity.***
-    -keep class com.google.gson.stream.** { *; }
-    #--------------- END ----------
-
-    #--------------- BEGIN: 返回到页面的自定义Java对象防混淆 ----------
-    -keepclassmembers class cn.pedant.SafeWebViewBridge.sample.HostJsScope$RetJavaObj{ *; }
-    #--------------- END ----------
+发布时需在你的混淆配置加入像下面这样的代码，注意注入类都要**换成你项目中实际使用类名**:
 
     #--------------- BEGIN: 注入到页面的接口类防混淆 ----------
     -keepclassmembers class cn.pedant.SafeWebViewBridge.sample.HostJsScope{ *; }

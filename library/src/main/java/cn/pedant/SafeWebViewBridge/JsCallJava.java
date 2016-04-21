@@ -2,9 +2,6 @@ package cn.pedant.SafeWebViewBridge;
 
 import android.text.TextUtils;
 import android.webkit.WebView;
-import android.util.Log;
-
-import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -19,9 +16,8 @@ public class JsCallJava {
     private HashMap<String, Method> mMethodsMap;
     private String mInjectedName;
     private String mPreloadInterfaceJS;
-    private Gson mGson;
 
-    public JsCallJava (String injectedName, Class injectedCls) {
+    public JsCallJava(String injectedName, Class injectedCls) {
         try {
             if (TextUtils.isEmpty(injectedName)) {
                 throw new Exception("injected name can not be null");
@@ -35,7 +31,7 @@ public class JsCallJava {
             sb.append(" initialization begin\");var a={queue:[],callback:function(){var d=Array.prototype.slice.call(arguments,0);var c=d.shift();var e=d.shift();this.queue[c].apply(this,d);if(!e){delete this.queue[c]}}};");
             for (Method method : methods) {
                 String sign;
-                if (method.getModifiers() != (Modifier.PUBLIC | Modifier.STATIC) || (sign = genJavaMethodSign(method)) == null) {
+                if (method.getModifiers() != (Modifier.PUBLIC | Modifier.STATIC) || !verifyMethodReturnType(method.getReturnType()) || (sign = genJavaMethodSign(method)) == null) {
                     continue;
                 }
                 mMethodsMap.put(sign, method);
@@ -52,31 +48,28 @@ public class JsCallJava {
             sb.append(mInjectedName);
             sb.append(" initialization end\")})(window);");
             mPreloadInterfaceJS = sb.toString();
-        } catch(Exception e){
-            Log.e(TAG, "init js error:" + e.getMessage());
+        } catch (Exception e) {
+            L.e(TAG, "init js error:" + e.getMessage());
         }
     }
 
-    private String genJavaMethodSign (Method method) {
+    private String genJavaMethodSign(Method method) {
         String sign = method.getName();
         Class[] argsTypes = method.getParameterTypes();
         int len = argsTypes.length;
         if (len < 1 || argsTypes[0] != WebView.class) {
-            Log.w(TAG, "method(" + sign + ") must use webview to be first parameter, will be pass");
+            L.w(TAG, "method(" + sign + ") must use webview to be first parameter, will be pass");
             return null;
         }
         for (int k = 1; k < len; k++) {
             Class cls = argsTypes[k];
             if (cls == String.class) {
                 sign += "_S";
-            } else if (cls == int.class ||
-                cls == long.class ||
-                cls == float.class ||
-                cls == double.class) {
-                sign += "_N";
             } else if (cls == boolean.class) {
                 sign += "_B";
-            } else if (cls == JSONObject.class) {
+            } else if (isWrapClass(cls)) {
+                sign += "_N";
+            } else if (cls == JSONObject.class || cls == JSONArray.class) {
                 sign += "_O";
             } else if (cls == JsCallback.class) {
                 sign += "_F";
@@ -87,7 +80,26 @@ public class JsCallJava {
         return sign;
     }
 
-    public String getPreloadInterfaceJS () {
+    private boolean verifyMethodReturnType(Class clz) {
+        return isWrapClass(clz) || clz == JSONObject.class || clz == JSONArray.class;
+    }
+
+    /**
+     * 是否是Java数据类型（String,int, double, float, long, short, boolean, byte, char，
+     * void）
+     *
+     * @param clz
+     * @return
+     */
+    public static boolean isWrapClass(Class<?> clz) {
+        try {
+            return clz == String.class || clz.isPrimitive() ? true : ((Class<?>) clz.getField("TYPE").get(null)).isPrimitive();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public String getPreloadInterfaceJS() {
         return mPreloadInterfaceJS;
     }
 
@@ -119,7 +131,7 @@ public class JsCallJava {
                         values[k + 1] = argsVals.getBoolean(k);
                     } else if ("object".equals(currType)) {
                         sign += "_O";
-                        values[k + 1] = argsVals.isNull(k) ? null : argsVals.getJSONObject(k);
+                        values[k + 1] = argsVals.isNull(k) ? null : argsVals.get(k);
                     } else if ("function".equals(currType)) {
                         sign += "_F";
                         values[k + 1] = new JsCallback(webView, mInjectedName, argsVals.getInt(k));
@@ -167,28 +179,19 @@ public class JsCallJava {
         }
     }
 
-    private String getReturn (String reqJson, int stateCode, Object result) {
+    private String getReturn(String reqJson, int stateCode, Object result) {
         String insertRes;
         if (result == null) {
             insertRes = "null";
         } else if (result instanceof String) {
-            result = ((String) result).replace("\"", "\\\"");
-            insertRes = "\"" + result + "\"";
-        } else if (!(result instanceof Integer)
-                && !(result instanceof Long)
-                && !(result instanceof Boolean)
-                && !(result instanceof Float)
-                && !(result instanceof Double)
-                && !(result instanceof JSONObject)) {    // 非数字或者非字符串的构造对象类型都要序列化后再拼接
-            if (mGson == null) {
-                mGson = new Gson();
-            }
-            insertRes = mGson.toJson(result);
+            String resultStr = (String) result;
+            char firstChar = resultStr.charAt(0);
+            insertRes = firstChar == '{' || firstChar == '[' ? resultStr : "\"" + resultStr.replace("\"", "\\\"") + "\"";
         } else {  //数字直接转化
             insertRes = String.valueOf(result);
         }
         String resStr = String.format(RETURN_RESULT_FORMAT, stateCode, insertRes);
-        Log.d(TAG, mInjectedName + " call json: " + reqJson + " result:" + resStr);
+        L.d(TAG, mInjectedName + " call json: " + reqJson + " result:" + resStr);
         return resStr;
     }
 }

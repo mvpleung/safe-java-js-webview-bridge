@@ -8,10 +8,9 @@
 
 package cn.pedant.SafeWebViewBridge;
 
-import android.util.Log;
 import android.webkit.WebView;
 
-import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 
 public class JsCallback {
     private static final String CALLBACK_JS_FORMAT = "javascript:%s.callback(%d, %d %s);";
@@ -48,7 +47,7 @@ public class JsCallback {
             }
         }
         String execJs = String.format(CALLBACK_JS_FORMAT, mInjectedName, mIndex, mIsPermanent, sb.toString());
-        Log.d("JsCallBack", execJs);
+        L.d("JsCallBack", execJs);
         mWebViewRef.get().loadUrl(execJs);
         mCouldGoOn = mIsPermanent > 0;
     }

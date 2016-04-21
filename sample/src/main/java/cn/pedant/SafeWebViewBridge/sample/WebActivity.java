@@ -6,25 +6,30 @@ import android.webkit.JsPromptResult;
 import android.webkit.JsResult;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+
+import com.google.gson.Gson;
+
 import cn.pedant.SafeWebViewBridge.InjectedChromeClient;
 
 public class WebActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        WebView wv = new WebView(this);
-        setContentView(wv);
+        setContentView(R.layout.activity_main);
+        WebView wv = (WebView) findViewById(R.id.webView);
         WebSettings ws = wv.getSettings();
         ws.setJavaScriptEnabled(true);
         wv.setWebChromeClient(
-            new CustomChromeClient("HostApp", HostJsScope.class)
+                new CustomChromeClient("HostApp", HostJsScope.class)
         );
         wv.loadUrl("file:///android_asset/test.html");
     }
 
     public class CustomChromeClient extends InjectedChromeClient {
 
-        public CustomChromeClient (String injectedName, Class injectedCls) {
+        Gson gson = new Gson();
+
+        public CustomChromeClient(String injectedName, Class injectedCls) {
             super(injectedName, injectedCls);
         }
 
@@ -36,7 +41,7 @@ public class WebActivity extends Activity {
         }
 
         @Override
-        public void onProgressChanged (WebView view, int newProgress) {
+        public void onProgressChanged(WebView view, int newProgress) {
             super.onProgressChanged(view, newProgress);
             // to do your work
             // ...

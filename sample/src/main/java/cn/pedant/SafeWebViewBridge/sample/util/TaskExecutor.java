@@ -11,38 +11,61 @@ package cn.pedant.SafeWebViewBridge.sample.util;
 import android.os.Handler;
 import android.os.Looper;
 
+import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * 任务调度
+ * created on 2016/4/20 10:47
+ */
 public class TaskExecutor {
     private static ScheduledThreadPoolExecutor gScheduledThreadPoolExecutor = null;
     private static Handler gMainHandler = null;
 
     //不包含网络传输处理过程的线程池执行对象
-    private static ExecutorService gThreadPoolExecutor = null;
+    private static AbstractExecutorService gThreadPoolExecutor = null;
 
     //包含网络传输处理过程的线程池执行对象
-    private static ExecutorService gNetProcessThreadPoolExecutor = null;
+    private static AbstractExecutorService gNetProcessThreadPoolExecutor = null;
 
-    //执行不包含网络传输处理过程的线程
+    // 线程工厂
+    private static ThreadFactory threadFactory = new ThreadFactory() {
+        private final AtomicInteger integer = new AtomicInteger();
+
+        @Override
+        public Thread newThread(Runnable r) {
+            return new Thread(r, "myThreadPool thread:" + integer.getAndIncrement());
+        }
+    };
+
+    /**
+     * 执行不包含网络传输处理过程的线程
+     *
+     * @param task
+     */
     public static void executeTask(Runnable task) {
         ensureThreadPoolExecutor();
         gThreadPoolExecutor.execute(task);
     }
 
-    //执行包含网络传输处理过程的线程，可能存在等待阻塞的状况
+    /**
+     * 执行包含网络传输处理过程的线程，可能存在等待阻塞的状况
+     *
+     * @param task
+     */
     public static void executeNetTask(Runnable task) {
         ensureNetProcessThreadPoolExecutor();
         gNetProcessThreadPoolExecutor.execute(task);
     }
 
-    public static <T> Future<T> submitTask(Callable <T> task) {
+    public static <T> Future<T> submitTask(Callable<T> task) {
         ensureThreadPoolExecutor();
         return gThreadPoolExecutor.submit(task);
     }
@@ -82,8 +105,9 @@ public class TaskExecutor {
         if (gThreadPoolExecutor == null) {
             gThreadPoolExecutor = new ThreadPoolExecutor(5, 10,
                     60L, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<Runnable>(),
-                    Executors.defaultThreadFactory());
+                    new LinkedBlockingQueue<Runnable>(10),
+                    threadFactory,
+                    new ThreadPoolExecutor.DiscardOldestPolicy());
 
         }
     }
@@ -92,8 +116,9 @@ public class TaskExecutor {
         if (gNetProcessThreadPoolExecutor == null) {
             gNetProcessThreadPoolExecutor = new ThreadPoolExecutor(10, 15,
                     60L, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<Runnable>(),
-                    Executors.defaultThreadFactory());
+                    new LinkedBlockingQueue<Runnable>(10),
+                    threadFactory,
+                    new ThreadPoolExecutor.DiscardOldestPolicy());
 
         }
     }

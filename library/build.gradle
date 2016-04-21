@@ -10,6 +10,7 @@ android {
 
     defaultConfig {
         minSdkVersion 9
+        targetSdkVersion 22
     }
 
     lintOptions {
@@ -18,7 +19,7 @@ android {
 }
 
 dependencies {
-    compile 'com.google.code.gson:gson:2.3'
+    compile 'com.google.code.gson:gson:2.2.4'
 }
 
-apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
+//apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
