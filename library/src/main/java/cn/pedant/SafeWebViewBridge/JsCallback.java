@@ -12,6 +12,10 @@ import android.webkit.WebView;
 
 import java.lang.ref.WeakReference;
 
+/**
+ * 解决一处JSON串回调异常
+ * Liangzc updated on 2016/4/22 14:40
+ */
 public class JsCallback {
     private static final String CALLBACK_JS_FORMAT = "javascript:%s.callback(%d, %d %s);";
     private int mIndex;
@@ -20,14 +24,14 @@ public class JsCallback {
     private int mIsPermanent;
     private String mInjectedName;
 
-    public JsCallback (WebView view, String injectedName, int index) {
+    public JsCallback(WebView view, String injectedName, int index) {
         mCouldGoOn = true;
         mWebViewRef = new WeakReference<WebView>(view);
         mInjectedName = injectedName;
         mIndex = index;
     }
 
-    public void apply (Object... args) throws JsCallbackException {
+    public void apply(Object... args) throws JsCallbackException {
         if (mWebViewRef.get() == null) {
             throw new JsCallbackException("the WebView related to the JsCallback has been recycled");
         }
@@ -35,13 +39,15 @@ public class JsCallback {
             throw new JsCallbackException("the JsCallback isn't permanent,cannot be called more than once");
         }
         StringBuilder sb = new StringBuilder();
-        for (Object arg : args){
+        for (Object arg : args) {
             sb.append(",");
-            boolean isStrArg = arg instanceof String;
+            String strArg = String.valueOf(arg);
+            char firstChar = strArg.charAt(0);
+            boolean isStrArg = firstChar != '{' && firstChar != '[';
             if (isStrArg) {
                 sb.append("\"");
             }
-            sb.append(String.valueOf(arg));
+            sb.append(strArg);
             if (isStrArg) {
                 sb.append("\"");
             }
@@ -52,12 +58,12 @@ public class JsCallback {
         mCouldGoOn = mIsPermanent > 0;
     }
 
-    public void setPermanent (boolean value) {
+    public void setPermanent(boolean value) {
         mIsPermanent = value ? 1 : 0;
     }
 
     public static class JsCallbackException extends Exception {
-        public JsCallbackException (String msg) {
+        public JsCallbackException(String msg) {
             super(msg);
         }
     }

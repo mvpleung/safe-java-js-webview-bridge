@@ -10,6 +10,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 
+/**
+ * 移除JSON依赖，减少包体积，解耦解析操作
+ * Liangzc updated on 2016/4/21 17:11
+ */
 public class JsCallJava {
     private final static String TAG = "JsCallJava";
     private final static String RETURN_RESULT_FORMAT = "{\"code\": %d, \"result\": %s}";
@@ -69,12 +73,12 @@ public class JsCallJava {
                 sign += "_B";
             } else if (isWrapClass(cls)) {
                 sign += "_N";
-            } else if (cls == JSONObject.class || cls == JSONArray.class) {
+            } else if (cls == JSONObject.class || cls == JSONArray.class || cls == Object.class) {
                 sign += "_O";
             } else if (cls == JsCallback.class) {
                 sign += "_F";
             } else {
-                sign += "_P";
+                sign = null;
             }
         }
         return sign;
@@ -85,8 +89,7 @@ public class JsCallJava {
     }
 
     /**
-     * 是否是Java数据类型（String,int, double, float, long, short, boolean, byte, char，
-     * void）
+     * 是否是Java数据类型（String,int, double, float, long, short, boolean, byte, char，void）
      *
      * @param clz
      * @return
@@ -135,8 +138,6 @@ public class JsCallJava {
                     } else if ("function".equals(currType)) {
                         sign += "_F";
                         values[k + 1] = new JsCallback(webView, mInjectedName, argsVals.getInt(k));
-                    } else {
-                        sign += "_P";
                     }
                 }
 
