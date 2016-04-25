@@ -4,6 +4,7 @@ version = VERSION_NAME
 group = GROUP
 
 android {
+    publishNonDefault true
     compileOptions.encoding = "UTF-8"
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -16,10 +17,6 @@ android {
     lintOptions {
         abortOnError false
     }
-}
-
-dependencies {
-    compile 'com.google.code.gson:gson:2.2.4'
 }
 
 //apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'

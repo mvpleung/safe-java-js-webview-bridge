@@ -28,6 +28,9 @@ android {
 }
 
 dependencies {
+    compile 'com.google.code.gson:gson:2.2.4'
     //compile 'cn.pedant.safewebviewbridge:library:1.4'
-    compile project(':library')
+//    compile project(':library')
+    releaseCompile project(path: ':library', configuration: 'release')
+    debugCompile project(path: ':library', configuration: 'debug')
 }

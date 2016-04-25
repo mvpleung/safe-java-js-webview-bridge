@@ -7,8 +7,6 @@ import android.webkit.JsResult;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-import com.google.gson.Gson;
-
 import cn.pedant.SafeWebViewBridge.InjectedChromeClient;
 
 public class WebActivity extends Activity {
@@ -26,8 +24,6 @@ public class WebActivity extends Activity {
     }
 
     public class CustomChromeClient extends InjectedChromeClient {
-
-        Gson gson = new Gson();
 
         public CustomChromeClient(String injectedName, Class injectedCls) {
             super(injectedName, injectedCls);
